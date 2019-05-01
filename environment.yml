@@ -1,0 +1,18 @@
+name: dqn-autonomous
+channels:
+    - conda-forge
+dependencies:
+    - base64
+    - python==3.7.2
+    - numpy
+    - matplotlib
+    - jupyter
+    - opencv
+    - scikit-learn
+    - scikit-image
+    - scipy
+    - h5py
+    - eventlet
+    - flask-socketio
+    - pip:
+        - tensorflow

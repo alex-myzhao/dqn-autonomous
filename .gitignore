@@ -102,3 +102,11 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+_out/
+
+.vscode/
+
+.DS_Store
+
+simulator
