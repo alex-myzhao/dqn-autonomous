@@ -14,38 +14,35 @@ app = Flask(__name__)
 @sio.on('telemetry')
 def telemetry(sid, data):
     if data:
-        # The current steering angle of the car
         steering_angle = float(data["steering_angle"])
-        # The current throttle of the car
         throttle = float(data["throttle"])
-        # The current speed of the car
         speed = float(data["speed"])
-        # The current image from the center camera of the car
+        cte = float(data["cte"])  # cross track error
         imagedata = data["image"]
-        # image = Image.open(BytesIO(base64.b64decode(data["image"])))
-        img = cv2.imdecode(np.frombuffer(base64.b64decode(imagedata), np.uint8), cv2.IMREAD_COLOR)
-        # cv2.imwrite(path.join('_out', str(counter) + '.png') , img)
-        counter += 1
-        send_control(0, 5)
+        # img = cv2.imdecode(np.frombuffer(base64.b64decode(imagedata), np.uint8), cv2.IMREAD_COLOR)
+        # cv2.imwrite(path.join('_out', str(counter // 20) + '.png') , img)
+        print(steering_angle, throttle, speed, cte)
+        send_control(0, 0.2)
     else:
         # NOTE: DON'T EDIT THIS.
         sio.emit('manual', data={}, skip_sid=True)
-
-
-@sio.on('connect')
-def connect(sid, environ):
-    print("connect ", sid)
-    send_control(0, 0)
 
 
 def send_control(steering_angle, throttle):
     sio.emit(
         "steer",
         data={
-            'steering_angle': steering_angle.__str__(),
-            'throttle': throttle.__str__()
+            'steering_angle': steering_angle,
+            'throttle': throttle
         },
         skip_sid=True)
+
+
+def reset():
+    print('reset')
+    # reset all global settings
+    # storage buffered data
+    sio.emit('reset', {})
 
 
 if __name__ == "__main__":
