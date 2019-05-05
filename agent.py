@@ -9,9 +9,9 @@ class Agent:
 
     def __init__(self, options=None):
         # -- Basic settings related to the environment --
-        self.num_actions = len(Agent.ACTION_SPACE)
+        self.num_actions = 3
         # -- TD trainer options --
-        self.learning_rate = 0.01         # learning rate
+        self.learning_rate = 0.001        # learning rate
         self.momentum = 0.8               # momentum
         self.batch_size = 8               # batch size
         self.l2_decay = 0.01              # L2 normalization
@@ -19,7 +19,7 @@ class Agent:
         self.temporal_window = 3          # number of pervious states an agent remembers
         self.gamma = 0.7                  # future discount for reward
         self.epsilon = 0.3                # epsilon during training
-        self.start_learn_threshold = 40  # minimum number of examples in replay memory before learning
+        self.start_learn_threshold = 20  # minimum number of examples in replay memory before learning
         self.experience_size = 3000       # size of replay memory
         self.learning_steps_burnin = 2000 # number of random actions the agent takes before learning
         self.learning_steps_total = 10000 # number of training iterations
@@ -31,7 +31,7 @@ class Agent:
         self.step = 0
 
     def _build_model(self):
-        opt = keras.optimizers.SGD(lr=self.learning_rate, momentum=self.momentum)
+        # opt = keras.optimizers.SGD(lr=self.learning_rate, momentum=self.momentum)
         model = keras.Sequential()
         model.add(keras.layers.Conv2D(32, (3, 3), padding='same'))
         model.add(keras.layers.Activation('relu'))
@@ -39,15 +39,12 @@ class Agent:
         model.add(keras.layers.Conv2D(64, (3, 3), padding='same'))
         model.add(keras.layers.Activation('relu'))
         model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), padding='valid'))
-        model.add(keras.layers.Conv2D(128, (3, 3), padding='same'))
-        model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), padding='valid'))
-        model.add(keras.layers.Dropout(0.5))
         model.add(keras.layers.Flatten())
-        model.add(keras.layers.Dense(128))
-        model.add(keras.layers.Dense(128))
-        model.add(keras.layers.Dense(self.num_actions))
-        model.add(keras.layers.Activation('softmax'))
-        model.compile(loss='mean_squared_error', optimizer=opt)
+        model.add(keras.layers.Dense(24))
+        model.add(keras.layers.Dense(24))
+        model.add(keras.layers.Dense(self.num_actions, activation='linear'))
+        # model.add(keras.layers.Activation('softmax'))
+        model.compile(loss='mean_squared_error', optimizer='adam')
         return model
 
     def _forward(self, state):
