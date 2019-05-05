@@ -8,6 +8,7 @@ from os import path
 from flask import Flask
 
 from agent import Agent
+from preprocessor import process
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -17,7 +18,7 @@ episode = 0
 counter = 0
 timestep = 0
 cur_control = [0, 0]
-buffer = [None, None] # last state, last action
+buffer = [None, None, None] # last state, last action, last reward
 INTERVAL = 25
 INIT_THRESHOLD = 3
 FINISH_THRESHOLD = 2.5
@@ -35,19 +36,18 @@ def telemetry(sid, data):
         if timestep % INTERVAL == 0:
             counter += 1
             print('episode {}, step {}'.format(episode, counter))
+            cte = float(data['cte'])
             if counter <= INIT_THRESHOLD:
                 cur_control = [0.0, 0.2]
-                new_state = cv2.resize(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR), (160, 80))
-                buffer[0], buffer[1] = new_state, 0
+                new_state = process(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR))
+                buffer[0], buffer[1], buffer[2] = new_state, 0, dqn_agent.get_reward(cte)
             else:
-                cte = float(data['cte'])
                 if -FINISH_THRESHOLD < cte < FINISH_THRESHOLD:
-                    state, action = buffer[0], buffer[1]
-                    new_state = cv2.resize(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR), (160, 80))
-                    reward = dqn_agent.get_reward(cte)
+                    state, action, reward = buffer[0], buffer[1], buffer[2]
+                    new_state = process(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR))
                     new_action = dqn_agent.act(new_state)
                     # buffer the current result
-                    buffer[0], buffer[1] = new_state, new_action
+                    buffer[0], buffer[1], buffer[2] = new_state, new_action, dqn_agent.get_reward(cte)
                     dqn_agent.learn(state, action, reward, new_state)
                     cur_control = Agent.ACTION_SPACE[new_action]
                 else:
@@ -77,7 +77,7 @@ def reset():
     episode += 1
     print('reset, start episode: {}'.format(episode))
     timestep, counter = 0, 0
-    buffer = [None, None]
+    buffer = [None, None, None]
     cur_control = [0.0, 0.0]
     if episode % 10 == 0:
         dqn_agent.save('./model/autonomous.h5')
