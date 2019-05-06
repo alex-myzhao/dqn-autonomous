@@ -14,6 +14,7 @@ sio = socketio.Server()
 app = Flask(__name__)
 
 dqn_agent = Agent()
+dqn_agent.load('./model/autonomous.h5')
 episode = 0
 counter = 0
 timestep = 0
@@ -42,8 +43,8 @@ def telemetry(sid, data):
                 new_state = process(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR))
                 buffer[0], buffer[1], buffer[2] = new_state, 0, dqn_agent.get_reward(cte)
             else:
+                state, action, reward = buffer[0], buffer[1], dqn_agent.get_reward(cte)
                 if -FINISH_THRESHOLD < cte < FINISH_THRESHOLD:
-                    state, action, reward = buffer[0], buffer[1], buffer[2]
                     new_state = process(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR))
                     new_action = dqn_agent.act(new_state)
                     # buffer the current result
@@ -51,6 +52,8 @@ def telemetry(sid, data):
                     dqn_agent.learn(state, action, reward, new_state)
                     cur_control = Agent.ACTION_SPACE[new_action]
                 else:
+                    new_state = np.zeros((60, 240))
+                    dqn_agent.learn(state, action, reward, new_state)
                     reset()
         send_control(cur_control[0], cur_control[1])
     else:

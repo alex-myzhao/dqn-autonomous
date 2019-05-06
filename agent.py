@@ -7,7 +7,7 @@ import cv2
 class Agent:
     ACTION_SPACE = [(0, 0.1), (-25, 0.1), (25, 0.1)]
 
-    def __init__(self, options=None):
+    def __init__(self):
         # -- Basic settings related to the environment --
         self.num_actions = 3
         # -- TD trainer options --
@@ -18,10 +18,10 @@ class Agent:
         # -- other options --
         self.temporal_window = 3          # number of pervious states an agent remembers
         self.gamma = 0.7                  # future discount for reward
-        self.epsilon = 0.3                # epsilon during training
+        self.epsilon = 0.2                # epsilon during training
         self.start_learn_threshold = 20  # minimum number of examples in replay memory before learning
         self.experience_size = 3000       # size of replay memory
-        self.learning_steps_burnin = 2000 # number of random actions the agent takes before learning
+        self.learning_steps_burnin = 200  # number of random actions the agent takes before learning
         self.learning_steps_total = 10000 # number of training iterations
         # -- Buffered model --
         self._model = self._build_model()
@@ -33,6 +33,7 @@ class Agent:
     def _build_model(self):
         # opt = keras.optimizers.SGD(lr=self.learning_rate, momentum=self.momentum)
         model = keras.Sequential()
+        model.add(keras.layers.InputLayer(batch_input_shape=(self.batch_size, 60, 240, 1)))
         model.add(keras.layers.Conv2D(32, (3, 3), padding='same'))
         model.add(keras.layers.Activation('relu'))
         model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), padding='valid'))
@@ -40,11 +41,12 @@ class Agent:
         model.add(keras.layers.Activation('relu'))
         model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), padding='valid'))
         model.add(keras.layers.Flatten())
-        model.add(keras.layers.Dense(24))
+        model.add(keras.layers.Dense(24, input_dim=64))
         model.add(keras.layers.Dense(24))
         model.add(keras.layers.Dense(self.num_actions, activation='linear'))
         # model.add(keras.layers.Activation('softmax'))
-        model.compile(loss='mean_squared_error', optimizer='adam')
+        model.compile(loss='mean_squared_error', optimizer=keras.optimizers.Adam(lr=self.learning_rate))
+        model.summary()
         return model
 
     def _forward(self, state):
@@ -52,13 +54,16 @@ class Agent:
         return prediction
 
     def _backward(self, state, target):
-        history = self._model.fit(state, target, epochs=5, verbose=0)
+        history = self._model.fit(state, target, epochs=2, verbose=0)
         print(history.history)
 
     def _remember(self, state, action, reward, next_state, debug=True):
         index = self.step % self.experience_size
         self._memory[index] = (state, action, reward, next_state)
         if debug:
+            mean, stdv = [120.9934, 18.8303]
+            state = (state * stdv) + mean
+            state = state.astype(int)
             cv2.imwrite('./_debug/{0:0>5}-{1}-{2}.png'.format(self.step, action, reward), state)
             # cv2.imwrite('./_debug/' + str(self.step) + '_' + str(action) + '_' + str(reward) + '.png', state)
             # cv2.imwrite('./_debug/' + str(self.step) + '_next' + '.png', next_state)
@@ -84,15 +89,20 @@ class Agent:
             return random.randint(0, self.num_actions - 1)
         else:
             act_values = self._forward(np.array([state]))
+            print(act_values)
             return np.argmax(act_values)
 
     def get_reward(self, cte):
-        if abs(cte) >= 2.0:
+        if abs(cte) >= 2.5:
+            return -100
+        elif abs(cte) >= 2.0:
             return -10
         elif abs(cte) >= 1.5:
             return 0
         elif abs(cte) >= 1.0:
             return 1
+        elif abs(cte) >= 0.5:
+            return 5
         else:
             return 10
 
