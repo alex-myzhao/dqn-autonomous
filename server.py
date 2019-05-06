@@ -52,7 +52,7 @@ def telemetry(sid, data):
                     dqn_agent.learn(state, action, reward, new_state)
                     cur_control = Agent.ACTION_SPACE[new_action]
                 else:
-                    new_state = np.zeros((60, 240))
+                    new_state = np.zeros((60, 240, 1))
                     dqn_agent.learn(state, action, reward, new_state)
                     reset()
         send_control(cur_control[0], cur_control[1])
