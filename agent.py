@@ -18,10 +18,10 @@ class Agent:
         # -- other options --
         self.temporal_window = 3          # number of pervious states an agent remembers
         self.gamma = 0.7                  # future discount for reward
-        self.epsilon = 0.2                # epsilon during training
-        self.start_learn_threshold = 20  # minimum number of examples in replay memory before learning
-        self.experience_size = 3000       # size of replay memory
-        self.learning_steps_burnin = 20  # number of random actions the agent takes before learning
+        self.epsilon = 0.00               # epsilon during training
+        self.start_learn_threshold = 20   # minimum number of examples in replay memory before learning
+        self.experience_size = 1000       # size of replay memory
+        self.learning_steps_burnin = 20   # number of random actions the agent takes before learning
         self.learning_steps_total = 10000 # number of training iterations
         # -- Buffered model --
         self._model = self._build_model()
@@ -34,15 +34,16 @@ class Agent:
         # opt = keras.optimizers.SGD(lr=self.learning_rate, momentum=self.momentum)
         model = keras.Sequential()
         model.add(keras.layers.InputLayer(input_shape=(60, 240, 1)))
-        model.add(keras.layers.Conv2D(16, (3, 3), padding='same'))
+        model.add(keras.layers.Conv2D(8, (3, 3), padding='same'))
         model.add(keras.layers.Activation('relu'))
+        model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), padding='valid'))
+        model.add(keras.layers.Dropout(0.25))
+
         model.add(keras.layers.Conv2D(16, (3, 3), padding='same'))
         model.add(keras.layers.Activation('relu'))
         model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), padding='valid'))
         model.add(keras.layers.Dropout(0.25))
 
-        model.add(keras.layers.Conv2D(32, (3, 3), padding='same'))
-        model.add(keras.layers.Activation('relu'))
         model.add(keras.layers.Conv2D(32, (3, 3), padding='same'))
         model.add(keras.layers.Activation('relu'))
         model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), padding='valid'))
@@ -63,7 +64,7 @@ class Agent:
         return prediction
 
     def _backward(self, state, target):
-        history = self._model.fit(state, target, epochs=2, verbose=0)
+        history = self._model.fit(state, target, epochs=1, verbose=0)
         print(history.history)
 
     def _remember(self, state, action, reward, next_state, debug=False):
@@ -104,16 +105,8 @@ class Agent:
     def get_reward(self, cte):
         if abs(cte) >= 2.5:
             return -100
-        elif abs(cte) >= 2.0:
-            return -10
-        elif abs(cte) >= 1.5:
-            return 0
-        elif abs(cte) >= 1.0:
-            return 1
-        elif abs(cte) >= 0.5:
-            return 5
         else:
-            return 10
+            return 1
 
     def load(self, name):
         self._model.load_weights(name)

@@ -19,3 +19,5 @@ python server.py
 
 - [Simple Reinforcement Learning with Tensorflow](https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0)
 - [Human-level control through deep reinforcement learning](https://www.nature.com/articles/nature14236)
+- [A Walk-through of AlexNet](https://medium.com/@smallfishbigsea/a-walk-through-of-alexnet-6cbd137a5637)
+- [Deep Q-Learning with Keras and Gym](https://keon.io/deep-q-learning/)

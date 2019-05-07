@@ -20,7 +20,7 @@ counter = 0
 timestep = 0
 cur_control = [0, 0]
 buffer = [None, None, None] # last state, last action, last reward
-INTERVAL = 25
+INTERVAL = 20
 INIT_THRESHOLD = 3
 FINISH_THRESHOLD = 2.5
 
@@ -44,15 +44,15 @@ def telemetry(sid, data):
                 buffer[0], buffer[1], buffer[2] = new_state, 0, dqn_agent.get_reward(cte)
             else:
                 state, action, reward = buffer[0], buffer[1], dqn_agent.get_reward(cte)
+                new_state = process(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR))
                 if -FINISH_THRESHOLD < cte < FINISH_THRESHOLD:
-                    new_state = process(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR))
                     new_action = dqn_agent.act(new_state)
                     # buffer the current result
                     buffer[0], buffer[1], buffer[2] = new_state, new_action, dqn_agent.get_reward(cte)
                     dqn_agent.learn(state, action, reward, new_state)
                     cur_control = Agent.ACTION_SPACE[new_action]
                 else:
-                    new_state = np.zeros((60, 240, 1))
+                    # new_state = np.zeros((60, 240, 1))
                     dqn_agent.learn(state, action, reward, new_state)
                     reset()
         send_control(cur_control[0], cur_control[1])
