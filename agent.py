@@ -95,12 +95,19 @@ class Agent:
         self.step += 1
 
     def act(self, state):
-        if self.step < self.learning_steps_burnin or np.random.rand() <= self.epsilon:
+        if self.step < self.learning_steps_burnin or np.random.rand() < self.epsilon:
             return random.randint(0, self.num_actions - 1)
         else:
             act_values = self._forward(np.array([state]))
             print(act_values)
             return np.argmax(act_values)
+
+    def act_greedy(self, state):
+        """ Always act based on the output of NN
+        """
+        act_values = self._forward(np.array([state]))
+        print(act_values)
+        return np.argmax(act_values)
 
     def get_reward(self, cte):
         if abs(cte) >= 2.5:

@@ -20,9 +20,10 @@ counter = 0
 timestep = 0
 cur_control = [0, 0]
 buffer = [None, None, None] # last state, last action, last reward
-INTERVAL = 20
+INTERVAL = 15
 INIT_THRESHOLD = 3
 FINISH_THRESHOLD = 2.5
+TRAIN = True
 
 
 @sio.on('telemetry')
@@ -46,10 +47,14 @@ def telemetry(sid, data):
                 state, action, reward = buffer[0], buffer[1], dqn_agent.get_reward(cte)
                 new_state = process(cv2.imdecode(np.frombuffer(base64.b64decode(data['image']), np.uint8), cv2.IMREAD_COLOR))
                 if -FINISH_THRESHOLD < cte < FINISH_THRESHOLD:
-                    new_action = dqn_agent.act(new_state)
-                    # buffer the current result
-                    buffer[0], buffer[1], buffer[2] = new_state, new_action, dqn_agent.get_reward(cte)
-                    dqn_agent.learn(state, action, reward, new_state)
+                    new_action = 0
+                    if TRAIN:
+                        new_action = dqn_agent.act(new_state)
+                        # buffer the current result
+                        buffer[0], buffer[1], buffer[2] = new_state, new_action, dqn_agent.get_reward(cte)
+                        dqn_agent.learn(state, action, reward, new_state)
+                    else:
+                        new_action = dqn_agent.act_greedy(new_state)
                     cur_control = Agent.ACTION_SPACE[new_action]
                 else:
                     # new_state = np.zeros((60, 240, 1))
