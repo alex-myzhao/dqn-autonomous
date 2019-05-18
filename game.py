@@ -21,7 +21,7 @@ class Environment:
         self.mode = mode
         # dqn agent
         self.agent = Agent()
-        self.agent.load('./model/autonomous.h5')
+        self.agent.load('./model/offline_model.h5')
         # socket io connection
         self.sio = sio
 
@@ -37,7 +37,8 @@ class Environment:
                 self.reset()
             elif self.get_stage() == 'TRAIN' and not self.is_crash(cte):
                 state, action, reward = self.buffer[0], self.buffer[1], self.agent.get_reward(cte)
-                new_action = self.agent.act(new_state)
+                # new_action = self.agent.act(new_state)
+                new_action = self.agent.act_with_guidence(new_state, cte)
                 self.buffer = [new_state, new_action, self.agent.get_reward(cte)]
                 self.agent.learn(state, action, reward, new_state)
                 self.current_control = Agent.ACTION_SPACE[new_action]
