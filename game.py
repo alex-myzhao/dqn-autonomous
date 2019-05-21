@@ -8,7 +8,7 @@ class Environment:
     # Global constant flags
     INTERVAL = 15
     INIT_THRESHOLD = 3
-    CRASH_THRESHOLD = 2.5
+    CRASH_THRESHOLD = 3
 
     def __init__(self, sio, mode='TRAIN'):
         self.episode = 0
@@ -21,7 +21,7 @@ class Environment:
         self.mode = mode
         # dqn agent
         self.agent = Agent()
-        self.agent.load('./model/offline_model.h5')
+        self.agent.load('./model/autonomous.h5')
         # socket io connection
         self.sio = sio
 

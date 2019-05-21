@@ -11,7 +11,7 @@ class Agent:
         # -- Basic settings related to the environment --
         self.num_actions = 3
         # -- TD trainer options --
-        self.learning_rate = 0.001        # learning rate
+        self.learning_rate = 0.0001        # learning rate
         self.momentum = 0.8               # momentum
         self.batch_size = 4               # batch size
         self.decay = 0.00001              # learning rate decay
@@ -67,16 +67,13 @@ class Agent:
 
     def _backward(self, state, target, epochs=1):
         history = self._model.fit(state, target, epochs=epochs, verbose=0)
-        # print(history.history['loss'][-1])
         self.loss_rec.append(history.history['loss'][-1])
-        # if self.step % 1000 == 0:
-        #     np.save('./_out/loss.npy', self.loss_rec)
+        if self.step % 1000 == 0:
+            np.save('./_out/online_loss.npy', self.loss_rec)
         return history.history['loss'][-1]
 
     def _remember(self, state, action, reward, next_state, debug=False):
         index = self.step % self.experience_size
-        if self.step > self.experience_size:
-            self.save_memory('./_out/memory.npy')
         self._memory[index] = (state, action, reward, next_state)
         if debug:
             mean, stdv = [120.9934, 18.8303]
@@ -121,6 +118,7 @@ class Agent:
     def act_with_guidence(self, state, cte):
         self.epsilon = np.max([self.epsilon * self.epsilon_decay, self.min_epsilon])
         if self.step < self.learning_steps_burnin or np.random.rand() < self.epsilon:
+            print('guiding')
             if abs(cte) < 1.5:
                 return 0
             elif cte > 0:
